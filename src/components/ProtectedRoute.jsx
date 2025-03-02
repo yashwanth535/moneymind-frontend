@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Navigate, Outlet } from "react-router-dom";
 
-const ProtectedRoute = ({ role }) => {
+const ProtectedRoute = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(null);
 
     useEffect(() => {
@@ -15,7 +15,7 @@ const ProtectedRoute = ({ role }) => {
                     headers: { "Content-Type": "application/json" },
                 });
                 const data = await response.json();
-                setIsAuthenticated(data.authenticated?data.role===role:false);
+                setIsAuthenticated(data.authenticated);
             } catch (error) {
                 console.error("Error checking authentication:", error);
                 setIsAuthenticated(false);

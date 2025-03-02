@@ -36,7 +36,7 @@ const AuthForms = ({ initialForm = "signin-form", onClose }) => {
       });
       const data = await response.json();
       if (data.success) {
-          window.location.href = "u/home";
+          window.location.href = "/home";
       } else {
         setMessage(data.message);
       }
@@ -146,7 +146,7 @@ const AuthForms = ({ initialForm = "signin-form", onClose }) => {
       if (response.status === 400) {
         setMessage(data.message);
       } else {
-        window.location.href = "u/home";
+        window.location.href = "/home";
       }
     } catch (error) {
       console.error("Error during signup:", error);

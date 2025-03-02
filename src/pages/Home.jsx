@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import logo from '../assets/moneymind.png';
 import TransactionForm from '../components/TransactionForm';
@@ -8,7 +8,16 @@ import Dashboard from '../components/Dashboard';
 
 const Home = () => {
   const location = useLocation();
-  const [activeView, setActiveView] = useState('overview'); // 'overview', 'transactions', 'add'
+  const navigate = useNavigate();
+  // Initialize activeView from localStorage or default to 'overview'
+  const [activeView, setActiveView] = useState(() => {
+    return localStorage.getItem('activeView') || 'overview'
+  });
+
+  // Update localStorage whenever activeView changes
+  useEffect(() => {
+    localStorage.setItem('activeView', activeView);
+  }, [activeView]);
 
   const headerVariants = {
     hidden: { y: -100, opacity: 0 },
@@ -68,6 +77,34 @@ const Home = () => {
         duration: 0.8,
         delay: 0.5
       }
+    }
+  };
+
+  const handleLogout = async () => {
+    console.log("Logout called");
+    const API_URL = import.meta.env.VITE_API_URL;
+    console.log(API_URL);
+    try {
+      const response = await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" }
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Logout failed: ${response.statusText}`);
+      }
+  
+      const data = await response.json();
+  
+      if (data.success) {
+        console.log("Logout successful");
+        navigate("/"); // Redirect to login page
+      } else {
+        console.error("Logout error:", data.message);
+      }
+    } catch (error) {
+      console.error("Logout error:", error.message);
     }
   };
 
@@ -136,7 +173,10 @@ const Home = () => {
                     whileHover="hover"
                   >
                     <button
-                      onClick={() => setActiveView(link.id)}
+                      onClick={() => {
+                        setActiveView(link.id);
+                        localStorage.setItem('activeView', link.id);
+                      }}
                       className={`
                         relative inline-block px-5 py-2.5 text-[15px] rounded-full
                         transition-all duration-300 
@@ -203,9 +243,12 @@ const Home = () => {
                 whileHover="hover"
                 className="mb-4"
               >
-                <Link to="/auth/logout" className="text-white transition-colors">
+                <button
+                  onClick={handleLogout}
+                  className="text-white transition-colors hover:text-[#83bce3]"
+                >
                   Log out
-                </Link>
+                </button>
               </motion.li>
             </motion.ul>
           </div>

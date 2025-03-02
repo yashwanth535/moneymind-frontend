@@ -11,7 +11,7 @@ const TransactionForm = () => {
     modeOfPayment: '',
     bank: ''
   });
-  const [message, setMessage] = useState({ text: '', type: '' });
+  const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formVariants = {
@@ -45,10 +45,30 @@ const TransactionForm = () => {
     });
   };
 
+  const Notification = ({ message, type }) => (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.1 }}
+      className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-4 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+      } text-white min-w-[200px] text-center`}
+    >
+      {message}
+    </motion.div>
+  );
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: 'success' });
+    }, 1000);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setMessage({ text: '', type: '' });
 
     try {
       const endpoint = formType === 'debit' 
@@ -81,7 +101,7 @@ const TransactionForm = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ text: data.message || 'Transaction added successfully!', type: 'success' });
+        showNotification(data.message || 'Transaction added successfully!', 'success');
         // Reset form
         setFormData({
           amount: '',
@@ -91,14 +111,11 @@ const TransactionForm = () => {
           bank: ''
         });
       } else {
-        setMessage({ text: data.message || 'Failed to add transaction', type: 'error' });
+        showNotification(data.message || 'Failed to add transaction', 'error');
       }
     } catch (error) {
       console.error('Error adding transaction:', error);
-      setMessage({ 
-        text: 'An unexpected error occurred. Please try again.', 
-        type: 'error' 
-      });
+      showNotification('An unexpected error occurred. Please try again.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -111,6 +128,12 @@ const TransactionForm = () => {
       variants={formVariants}
       className="w-full max-w-md mx-auto mt-8"
     >
+      <AnimatePresence>
+        {notification.show && (
+          <Notification message={notification.message} type={notification.type} />
+        )}
+      </AnimatePresence>
+
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -232,23 +255,6 @@ const TransactionForm = () => {
             {isSubmitting ? 'Submitting...' : 'Submit'}
           </motion.button>
         </motion.form>
-
-        <AnimatePresence>
-          {message.text && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className={`mt-4 p-3 rounded ${
-                message.type === 'success' 
-                  ? 'bg-green-500/20 text-green-300' 
-                  : 'bg-red-500/20 text-red-300'
-              }`}
-            >
-              {message.text}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
     </motion.div>
   );
