@@ -193,19 +193,30 @@ const TransactionList = () => {
     if (!window.confirm("Are you sure you want to delete this transaction?")) return;
 
     try {
-      const endpoint = type === 'Debit'
-        ? `${API_URL}/fetch-transactons/delete-debit/${id}`
-        : `${API_URL}/fetch-transactons/delete-credit/${id}`;
-
-      const response = await fetch(endpoint, { 
+      const response = await fetch(`${API_URL}/fetch-transactons/delete/${id}`, { 
         method: 'DELETE',
         credentials: 'include'
       });
+      
       if (response.ok) {
+        const data = await response.json();
         showNotification('Transaction deleted successfully');
-        fetchTransactions();
+        
+        // Update local state immediately
+        if (type === 'Debit') {
+          setDebits(prevDebits => prevDebits.filter(debit => debit._id !== id));
+          setFilteredTransactions(prevTransactions => 
+            prevTransactions.filter(transaction => transaction._id !== id)
+          );
+        } else {
+          setCredits(prevCredits => prevCredits.filter(credit => credit._id !== id));
+          setFilteredTransactions(prevTransactions => 
+            prevTransactions.filter(transaction => transaction._id !== id)
+          );
+        }
       } else {
-        showNotification('Error deleting transaction', 'error');
+        const errorData = await response.json();
+        showNotification(errorData.message || 'Error deleting transaction', 'error');
       }
     } catch (error) {
       console.error('Error deleting transaction:', error);
@@ -270,7 +281,7 @@ const TransactionList = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full flex flex-col"
+      className="w-full flex flex-col px-2 md:px-0"
     >
       <AnimatePresence>
         {notification.show && (
@@ -281,15 +292,15 @@ const TransactionList = () => {
       {/* Filter Section */}
       <motion.div
         variants={filterVariants}
-        className="sticky top-0 w-full mb-4 flex gap-4 flex-wrap justify-center items-center p-4 bg-[#1e1e2f] rounded-lg z-10 shadow-[0_4px_6px_rgba(0,0,0,0.5)]"
+        className="sticky top-0 w-full mb-4 flex flex-col md:flex-row gap-3 md:gap-4 flex-wrap justify-start md:justify-center items-start md:items-center p-3 md:p-4 bg-[#1e1e2f] rounded-lg z-10 shadow-[0_4px_6px_rgba(0,0,0,0.5)]"
       >
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 w-full md:w-auto"
         >
-          <label className="text-white text-[15px]">Type:</label>
+          <label className="text-white text-sm md:text-[15px] w-24 md:w-auto">Type:</label>
           <select 
-            className="px-3 py-2.5 text-sm text-white bg-[#2a2a40] border border-[#444] rounded-md focus:border-[#83bce3] focus:shadow-[0_0_5px_#83bce3] outline-none transition-all duration-300"
+            className="flex-1 md:flex-none px-2 md:px-3 py-2 md:py-2.5 text-sm text-white bg-[#2a2a40] border border-[#444] rounded-md focus:border-[#83bce3] focus:shadow-[0_0_5px_#83bce3] outline-none transition-all duration-300"
             value={filterType}
             onChange={(e) => {
               setFilterType(e.target.value);
@@ -303,11 +314,11 @@ const TransactionList = () => {
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 w-full md:w-auto"
         >
-          <label className="text-white text-[15px]">Mode:</label>
+          <label className="text-white text-sm md:text-[15px] w-24 md:w-auto">Mode:</label>
           <select 
-            className="px-3 py-2.5 text-sm text-white bg-[#2a2a40] border border-[#444] rounded-md focus:border-[#83bce3] focus:shadow-[0_0_5px_#83bce3] outline-none transition-all duration-300"
+            className="flex-1 md:flex-none px-2 md:px-3 py-2 md:py-2.5 text-sm text-white bg-[#2a2a40] border border-[#444] rounded-md focus:border-[#83bce3] focus:shadow-[0_0_5px_#83bce3] outline-none transition-all duration-300"
             value={filterMode}
             onChange={(e) => setFilterMode(e.target.value)}
           >
@@ -320,12 +331,12 @@ const TransactionList = () => {
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 w-full md:w-auto"
         >
-          <label className="text-white text-[15px]">From:</label>
+          <label className="text-white text-sm md:text-[15px] w-24 md:w-auto">From:</label>
           <input 
             type="date" 
-            className="px-3 py-2.5 text-sm text-white bg-[#2a2a40] border border-[#444] rounded-md focus:border-[#83bce3] focus:shadow-[0_0_5px_#83bce3] outline-none transition-all duration-300"
+            className="flex-1 md:flex-none px-2 md:px-3 py-2 md:py-2.5 text-sm text-white bg-[#2a2a40] border border-[#444] rounded-md focus:border-[#83bce3] focus:shadow-[0_0_5px_#83bce3] outline-none transition-all duration-300"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
@@ -333,12 +344,12 @@ const TransactionList = () => {
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 w-full md:w-auto"
         >
-          <label className="text-white text-[15px]">To:</label>
+          <label className="text-white text-sm md:text-[15px] w-24 md:w-auto">To:</label>
           <input 
             type="date" 
-            className="px-3 py-2.5 text-sm text-white bg-[#2a2a40] border border-[#444] rounded-md focus:border-[#83bce3] focus:shadow-[0_0_5px_#83bce3] outline-none transition-all duration-300"
+            className="flex-1 md:flex-none px-2 md:px-3 py-2 md:py-2.5 text-sm text-white bg-[#2a2a40] border border-[#444] rounded-md focus:border-[#83bce3] focus:shadow-[0_0_5px_#83bce3] outline-none transition-all duration-300"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
@@ -346,13 +357,13 @@ const TransactionList = () => {
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 w-full md:w-auto"
         >
-          <label className="text-white text-[15px]">Search:</label>
+          <label className="text-white text-sm md:text-[15px] w-24 md:w-auto">Search:</label>
           <input 
             type="text" 
             placeholder="Search transactions..." 
-            className="px-3 py-2.5 text-sm text-white bg-[#2a2a40] border border-[#444] rounded-md focus:border-[#83bce3] focus:shadow-[0_0_5px_#83bce3] outline-none transition-all duration-300"
+            className="flex-1 md:flex-none px-2 md:px-3 py-2 md:py-2.5 text-sm text-white bg-[#2a2a40] border border-[#444] rounded-md focus:border-[#83bce3] focus:shadow-[0_0_5px_#83bce3] outline-none transition-all duration-300"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -362,7 +373,7 @@ const TransactionList = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={applyFilters}
-          className="px-3 py-2.5 text-sm bg-[#71a9d1] text-black rounded-md hover:rounded-lg active:border-[#83bce3] transition-all duration-300"
+          className="w-full md:w-auto px-3 py-2 md:py-2.5 text-sm bg-[#71a9d1] text-black rounded-md hover:rounded-lg active:border-[#83bce3] transition-all duration-300"
         >
           Apply Filters
         </motion.button>
@@ -371,25 +382,25 @@ const TransactionList = () => {
       {/* Table Container */}
       <motion.div
         variants={tableVariants}
-        className="w-full overflow-x-auto"
+        className="w-full overflow-x-auto -mx-2 md:mx-0"
       >
-        <table className="w-full border-collapse bg-[#1e1e2f] text-white shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
+        <table className="w-full min-w-[640px] border-collapse bg-[#1e1e2f] text-white shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
           <thead>
             <motion.tr
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              <th className="p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333]">Date</th>
-              <th className="p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333]">Amount</th>
+              <th className="p-2 md:p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333] text-sm md:text-base">Date</th>
+              <th className="p-2 md:p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333] text-sm md:text-base">Amount</th>
               {filterType === 'Debit' && (
-                <th className="p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333]">Purpose</th>
+                <th className="p-2 md:p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333] text-sm md:text-base">Purpose</th>
               )}
-              <th className="p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333]">Mode</th>
+              <th className="p-2 md:p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333] text-sm md:text-base">Mode</th>
               {filterType === 'Credit' && (
-                <th className="p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333]">Bank</th>
+                <th className="p-2 md:p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333] text-sm md:text-base">Bank</th>
               )}
-              <th className="p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333]">Actions</th>
+              <th className="p-2 md:p-3 text-left bg-[#2a2a40] text-[#d1d1e1] border-b border-[#333] text-sm md:text-base">Actions</th>
             </motion.tr>
           </thead>
           <AnimatePresence mode="wait">
@@ -402,7 +413,7 @@ const TransactionList = () => {
                 >
                   <td 
                     colSpan={filterType === 'Debit' ? 5 : 5} 
-                    className="text-center py-4 text-lg font-bold text-[#e0e0e0]"
+                    className="text-center py-4 text-base md:text-lg font-bold text-[#e0e0e0]"
                   >
                     No {filterType}s Found
                   </td>
@@ -417,77 +428,79 @@ const TransactionList = () => {
                     animate="visible"
                     exit="exit"
                     transition={{ delay: index * 0.05 }}
-                    className="hover:bg-[#33334c] group"
+                    className="hover:bg-[#33334c] group text-sm md:text-base"
                   >
-                    <td className="px-2.5 py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
+                    <td className="px-2 md:px-2.5 py-2 md:py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
                       <span className="static">{new Date(transaction.date).toLocaleDateString()}</span>
                       <input 
                         type="date" 
-                        className="edit hidden w-full bg-[#2a2a40] text-white px-2 py-1 rounded" 
+                        className="edit hidden w-full bg-[#2a2a40] text-white px-2 py-1 rounded text-sm" 
                         defaultValue={transaction.date.split('T')[0]} 
                       />
                     </td>
-                    <td className="px-2.5 py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
+                    <td className="px-2 md:px-2.5 py-2 md:py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
                       <span className="static">₹{transaction.amount}</span>
                       <input 
                         type="number" 
-                        className="edit hidden w-full bg-[#2a2a40] text-white px-2 py-1 rounded" 
+                        className="edit hidden w-full bg-[#2a2a40] text-white px-2 py-1 rounded text-sm" 
                         defaultValue={transaction.amount} 
                       />
                     </td>
                     {filterType === 'Debit' && (
-                      <td className="px-2.5 py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
+                      <td className="px-2 md:px-2.5 py-2 md:py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
                         <span className="static">{transaction.purpose}</span>
                         <input 
                           type="text" 
-                          className="edit hidden w-full bg-[#2a2a40] text-white px-2 py-1 rounded" 
+                          className="edit hidden w-full bg-[#2a2a40] text-white px-2 py-1 rounded text-sm" 
                           defaultValue={transaction.purpose} 
                         />
                       </td>
                     )}
-                    <td className="px-2.5 py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
+                    <td className="px-2 md:px-2.5 py-2 md:py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
                       <span className="static">{transaction.modeOfPayment}</span>
                       <input 
                         type="text" 
-                        className="edit hidden w-full bg-[#2a2a40] text-white px-2 py-1 rounded" 
+                        className="edit hidden w-full bg-[#2a2a40] text-white px-2 py-1 rounded text-sm" 
                         defaultValue={transaction.modeOfPayment} 
                       />
                     </td>
                     {filterType === 'Credit' && (
-                      <td className="px-2.5 py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
+                      <td className="px-2 md:px-2.5 py-2 md:py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
                         <span className="static">{transaction.bank}</span>
                         <input 
                           type="text" 
-                          className="edit hidden w-full bg-[#2a2a40] text-white px-2 py-1 rounded" 
+                          className="edit hidden w-full bg-[#2a2a40] text-white px-2 py-1 rounded text-sm" 
                           defaultValue={transaction.bank} 
                         />
                       </td>
                     )}
-                    <td className="px-2.5 py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="edit-btn px-2 py-1 bg-[#71a9d1] text-black rounded mr-2 hover:bg-[#5a8cb3]"
-                        onClick={() => handleEdit(transaction._id, filterType)}
-                      >
-                        Edit
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="save-btn hidden px-2 py-1 bg-[#71a9d1] text-black rounded mr-2 hover:bg-[#5a8cb3]"
-                        onClick={() => handleSave(transaction._id, filterType)}
-                      >
-                        Save
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                        onClick={() => handleDelete(transaction._id, filterType)}
-                      >
-                        Delete
-                      </motion.button>
+                    <td className="px-2 md:px-2.5 py-2 md:py-3 bg-[#252535] text-[#e0e0e0] border-b border-[#333] group-hover:bg-[#33334c] group-hover:text-white">
+                      <div className="flex gap-1 md:gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="edit-btn px-2 py-1 text-xs md:text-sm bg-[#71a9d1] text-black rounded hover:bg-[#5a8cb3]"
+                          onClick={() => handleEdit(transaction._id, filterType)}
+                        >
+                          Edit
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="save-btn hidden px-2 py-1 text-xs md:text-sm bg-[#71a9d1] text-black rounded hover:bg-[#5a8cb3]"
+                          onClick={() => handleSave(transaction._id, filterType)}
+                        >
+                          Save
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="px-2 py-1 text-xs md:text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                          onClick={() => handleDelete(transaction._id, filterType)}
+                        >
+                          Delete
+                        </motion.button>
+                      </div>
                     </td>
                   </motion.tr>
                 ))

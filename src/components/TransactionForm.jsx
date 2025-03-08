@@ -126,7 +126,7 @@ const TransactionForm = () => {
       initial="hidden"
       animate="visible"
       variants={formVariants}
-      className="w-full max-w-md mx-auto mt-8"
+      className="w-full max-w-md mx-auto mt-4 md:mt-8 px-4 md:px-0"
     >
       <AnimatePresence>
         {notification.show && (
@@ -138,12 +138,12 @@ const TransactionForm = () => {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="bg-[#280832] p-6 rounded-lg shadow-[0_0_5px_#83bce3]"
+        className="bg-[#280832] p-4 md:p-6 rounded-lg shadow-[0_0_5px_#83bce3]"
       >
         <motion.select
           variants={inputVariants}
           whileHover={{ scale: 1.02 }}
-          className="w-[15%] mx-auto p-2.5 rounded-lg border border-[#20D982]/30 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
+          className="w-[25%] md:w-[15%] mx-auto p-2 md:p-2.5 text-sm md:text-base rounded-lg border border-[#20D982]/30 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
           value={formType}
           onChange={(e) => setFormType(e.target.value)}
         >
@@ -154,30 +154,30 @@ const TransactionForm = () => {
         <motion.form
           variants={formVariants}
           onSubmit={handleSubmit}
-          className="space-y-4 mt-4"
+          className="space-y-3 md:space-y-4 mt-4"
         >
           <motion.div variants={inputVariants} className="space-y-1">
-            <label className="text-gray-200">Amount</label>
+            <label className="text-gray-200 text-sm md:text-base">Amount</label>
             <motion.input
               whileFocus={{ scale: 1.01 }}
               type="number"
               name="amount"
               value={formData.amount}
               onChange={handleInputChange}
-              className="w-full p-2 rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
+              className="w-full p-2 text-sm md:text-base rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
               required
             />
           </motion.div>
 
           <motion.div variants={inputVariants} className="space-y-1">
-            <label className="text-gray-200">Date</label>
+            <label className="text-gray-200 text-sm md:text-base">Date</label>
             <motion.input
               whileFocus={{ scale: 1.01 }}
               type="date"
               name="date"
               value={formData.date}
               onChange={handleInputChange}
-              className="w-full p-2 rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
+              className="w-full p-2 text-sm md:text-base rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
               required
             />
           </motion.div>
@@ -190,27 +190,27 @@ const TransactionForm = () => {
               exit="hidden"
               className="space-y-1"
             >
-              <label className="text-gray-200">Purpose</label>
+              <label className="text-gray-200 text-sm md:text-base">Purpose</label>
               <motion.input
                 whileFocus={{ scale: 1.01 }}
                 type="text"
                 name="purpose"
                 value={formData.purpose}
                 onChange={handleInputChange}
-                className="w-full p-2 rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
+                className="w-full p-2 text-sm md:text-base rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
                 required={formType === 'debit'}
               />
             </motion.div>
           )}
 
           <motion.div variants={inputVariants} className="space-y-1">
-            <label className="text-gray-200">Mode of Payment</label>
+            <label className="text-gray-200 text-sm md:text-base">Mode of Payment</label>
             <motion.select
               whileFocus={{ scale: 1.01 }}
               name="modeOfPayment"
               value={formData.modeOfPayment}
               onChange={handleInputChange}
-              className="w-full p-2 rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
+              className="w-full p-2 text-sm md:text-base rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
               required
             >
               <option value="">Select Mode</option>
@@ -228,14 +228,14 @@ const TransactionForm = () => {
               exit="hidden"
               className="space-y-1"
             >
-              <label className="text-gray-200">Bank</label>
+              <label className="text-gray-200 text-sm md:text-base">Bank</label>
               <motion.input
                 whileFocus={{ scale: 1.01 }}
                 type="text"
                 name="bank"
                 value={formData.bank}
                 onChange={handleInputChange}
-                className="w-full p-2 rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
+                className="w-full p-2 text-sm md:text-base rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
                 required={formType === 'credit'}
               />
             </motion.div>
@@ -246,7 +246,7 @@ const TransactionForm = () => {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={isSubmitting}
-            className={`w-full px-4 py-2.5 bg-[#83bce3] text-black rounded-lg transition-all duration-300
+            className={`w-full px-4 py-2 md:py-2.5 text-sm md:text-base bg-[#83bce3] text-black rounded-lg transition-all duration-300
               ${isSubmitting 
                 ? 'opacity-70 cursor-not-allowed' 
                 : 'hover:bg-[#66a8c4] active:bg-[#3b7b98]'
