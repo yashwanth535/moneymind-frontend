@@ -1,5 +1,7 @@
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import React, { useState, useEffect } from "react";
+import { GoogleLogin } from "@react-oauth/google";
+import { googleSignIn } from "./google";
 import { motion } from "framer-motion";
 
 const AuthForms = ({ initialForm = "signin-form", onClose }) => {
@@ -22,6 +24,25 @@ const AuthForms = ({ initialForm = "signin-form", onClose }) => {
   useEffect(() => {
     setMessage("");
   }, [formType]);
+
+  const handleGoogleSuccess = async (response) => {
+    setMessage(""); // Clear any previous messages
+    setLoading(true);
+    try {
+      const data = await googleSignIn(response.credential);
+      if (data?.success) {
+        console.log("Login successful, navigating to dashboard...");
+        window.location.href = "/home";
+      } else {
+        setMessage(data.message || "Login failed, please try again.");
+      }
+    } catch (error) {
+      setMessage(error.message || "An unexpected error occurred.");
+    }
+  
+    setLoading(false);
+  };
+  
 
   const handleSignIn = async (event) => {
     event.preventDefault();
@@ -196,7 +217,7 @@ const AuthForms = ({ initialForm = "signin-form", onClose }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-xl"
+        className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-4xl"
       >
 
         <div className="flex justify-between items-center mb-6">
@@ -272,6 +293,19 @@ const AuthForms = ({ initialForm = "signin-form", onClose }) => {
                 Create account
               </button>
             </div>
+            <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                setErrors({ submit: "Google login failed. Please try again." });
+              }}
+              useOneTap
+              theme="outline"
+              shape="rectangular"
+              text="continue_with"
+              width="100%"
+            />
+          </div>
           </form>
         )}
 
@@ -333,6 +367,19 @@ const AuthForms = ({ initialForm = "signin-form", onClose }) => {
                 Sign In
               </button>
             </p>
+            <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                setErrors({ submit: "Google login failed. Please try again." });
+              }}
+              useOneTap
+              theme="outline"
+              shape="rectangular"
+              text="continue_with"
+              width="100%"
+            />
+          </div>
           </form>
         )}
 

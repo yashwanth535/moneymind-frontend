@@ -6,6 +6,20 @@ import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
 import Dashboard from '../components/Dashboard';
 import Reports from '../components/Reports';
+import Budget from '../components/Budget';
+// Import icons from lucide-react
+import { 
+  Receipt, 
+  PieChart, 
+  Plus, 
+  Target, 
+  Wallet, 
+  BarChart, 
+  Users, 
+  User, 
+  LogOut,
+  Menu
+} from 'lucide-react';
 
 const Home = () => {
   const location = useLocation();
@@ -128,6 +142,8 @@ const Home = () => {
         return <TransactionForm />;
       case 'reports':
         return <Reports />;
+      case 'budget':
+        return <Budget />;
       default:
         return <Dashboard />;
     }
@@ -153,6 +169,26 @@ const Home = () => {
     }
   };
 
+  // Header navigation items with icons
+  const headerNavItems = [
+    { id: 'transactions', text: "Transactions", icon: <Receipt size={18} /> },
+    { id: 'overview', text: "Overview", icon: <PieChart size={18} /> },
+    { id: 'add', text: "Add", icon: <Plus size={18} /> }
+  ];
+
+  // Left panel main menu items with icons
+  const leftPanelMainItems = [
+    { id: 'goals', text: "Goals", icon: <Target size={18} /> },
+    { id: 'budget', text: "Budget", icon: <Wallet size={18} /> },
+    { id: 'reports', text: "Reports", icon: <BarChart size={18} /> },
+    { id: 'groups', text: "Groups", icon: <Users size={18} /> }
+  ];
+
+  // Left panel bottom menu items with icons
+  const leftPanelBottomItems = [
+    { id: 'profile', text: "Profile", icon: <User size={18} /> }
+  ];
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
@@ -170,9 +206,7 @@ const Home = () => {
               className="lg:hidden menu-button p-1.5 md:p-2 text-white hover:text-[#83bce3] transition-colors"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <Menu size={24} />
             </button>
 
             {/* Logo */}
@@ -209,11 +243,7 @@ const Home = () => {
                 }
               }}
             >
-              {[
-                { id: 'transactions', text: "Transactions" },
-                { id: 'overview', text: "Overview" },
-                { id: 'add', text: "Add" }
-              ].map((link, index) => (
+              {headerNavItems.map((link, index) => (
                 <motion.li key={index}>
                   <motion.div
                     variants={navLinkVariants}
@@ -227,7 +257,7 @@ const Home = () => {
                         setIsMobileMenuOpen(false);
                       }}
                       className={`
-                        relative inline-block px-2 md:px-5 py-1.5 md:py-2.5 text-[12px] md:text-[15px] rounded-full
+                        relative inline-flex items-center gap-1.5 px-2 md:px-5 py-1.5 md:py-2.5 text-[12px] md:text-[15px] rounded-full
                         transition-all duration-300 
                         ${activeView === link.id
                           ? 'text-[#83bce3] font-medium shadow-lg bg-[#83bce3]/20' 
@@ -235,6 +265,7 @@ const Home = () => {
                         }
                       `}
                     >
+                      {link.icon}
                       {link.text}
                     </button>
                   </motion.div>
@@ -274,13 +305,7 @@ const Home = () => {
               {/* Other Menu Items */}
               <div className="space-y-6">
                 <ul className="space-y-4">
-                  {[
-                    { id: 'goals', text: "Goals" },
-                    { id: 'budget', text: "Budget" },
-                    { id: 'savings', text: "Savings" },
-                    { id: 'reports', text: "Reports" },
-                    { id: 'groups', text: "Groups" }
-                  ].map((item, index) => (
+                  {leftPanelMainItems.map((item, index) => (
                     <motion.li
                       key={index}
                       variants={listItemVariants}
@@ -288,7 +313,7 @@ const Home = () => {
                       animate={activeView === item.id ? "hover" : "visible"}
                       className={`
                         text-white cursor-pointer transition-all duration-300
-                        px-4 py-2 rounded-lg
+                        px-4 py-2 rounded-lg flex items-center gap-3
                         ${activeView === item.id 
                           ? 'text-[#83bce3] bg-[#83bce3]/10 shadow-lg' 
                           : 'hover:text-[#83bce3]'
@@ -299,6 +324,7 @@ const Home = () => {
                         setIsMobileMenuOpen(false);
                       }}
                     >
+                      {item.icon}
                       {item.text}
                     </motion.li>
                   ))}
@@ -308,10 +334,7 @@ const Home = () => {
               {/* Bottom Menu Items */}
               <div className="mt-auto pt-6">
                 <ul className="space-y-4">
-                  {[
-                    { id: 'categories', text: "Custom Categories" },
-                    { id: 'profile', text: "Profile" }
-                  ].map((item, index) => (
+                  {leftPanelBottomItems.map((item, index) => (
                     <motion.li
                       key={index}
                       variants={listItemVariants}
@@ -319,7 +342,7 @@ const Home = () => {
                       animate={activeView === item.id ? "hover" : "visible"}
                       className={`
                         text-white cursor-pointer transition-all duration-300
-                        px-4 py-2 rounded-lg
+                        px-4 py-2 rounded-lg flex items-center gap-3
                         ${activeView === item.id 
                           ? 'text-[#83bce3] bg-[#83bce3]/10 shadow-lg' 
                           : 'hover:text-[#83bce3]'
@@ -330,6 +353,7 @@ const Home = () => {
                         setIsMobileMenuOpen(false);
                       }}
                     >
+                      {item.icon}
                       {item.text}
                     </motion.li>
                   ))}
@@ -340,8 +364,9 @@ const Home = () => {
                   >
                     <button
                       onClick={handleLogout}
-                      className="text-white transition-colors hover:text-[#83bce3]"
+                      className="text-white transition-colors hover:text-[#83bce3] flex items-center gap-3"
                     >
+                      <LogOut size={18} />
                       Log out
                     </button>
                   </motion.li>
@@ -363,13 +388,7 @@ const Home = () => {
         >
           <div className="space-y-6">
             <motion.ul className="space-y-4">
-              {[
-                { id: 'goals', text: "Goals" },
-                { id: 'budget', text: "Budget" },
-                { id: 'savings', text: "Savings" },
-                { id: 'reports', text: "Reports" },
-                { id: 'groups', text: "Groups" }
-              ].map((item, index) => (
+              {leftPanelMainItems.map((item, index) => (
                 <motion.li
                   key={index}
                   variants={listItemVariants}
@@ -377,7 +396,7 @@ const Home = () => {
                   animate={activeView === item.id ? "hover" : "visible"}
                   className={`
                     text-white cursor-pointer transition-all duration-300
-                    px-4 py-2 rounded-lg
+                    px-4 py-2 rounded-lg flex items-center gap-3
                     ${activeView === item.id 
                       ? 'text-[#83bce3] bg-[#83bce3]/10 shadow-lg' 
                       : 'hover:text-[#83bce3]'
@@ -388,6 +407,7 @@ const Home = () => {
                     localStorage.setItem('activeView', item.id);
                   }}
                 >
+                  {item.icon}
                   {item.text}
                 </motion.li>
               ))}
@@ -395,10 +415,7 @@ const Home = () => {
           </div>
           <div className="mt-auto pt-6">
             <motion.ul className="space-y-4">
-              {[
-                { id: 'categories', text: "Custom Categories" },
-                { id: 'profile', text: "Profile" }
-              ].map((item, index) => (
+              {leftPanelBottomItems.map((item, index) => (
                 <motion.li
                   key={index}
                   variants={listItemVariants}
@@ -406,7 +423,7 @@ const Home = () => {
                   animate={activeView === item.id ? "hover" : "visible"}
                   className={`
                     text-white cursor-pointer transition-all duration-300
-                    px-4 py-2 rounded-lg
+                    px-4 py-2 rounded-lg flex items-center gap-3
                     ${activeView === item.id 
                       ? 'text-[#83bce3] bg-[#83bce3]/10 shadow-lg' 
                       : 'hover:text-[#83bce3]'
@@ -417,6 +434,7 @@ const Home = () => {
                     localStorage.setItem('activeView', item.id);
                   }}
                 >
+                  {item.icon}
                   {item.text}
                 </motion.li>
               ))}
@@ -427,8 +445,9 @@ const Home = () => {
               >
                 <button
                   onClick={handleLogout}
-                  className="text-white transition-colors hover:text-[#83bce3]"
+                  className="text-white transition-colors hover:text-[#83bce3] flex items-center gap-3"
                 >
+                  <LogOut size={18} />
                   Log out
                 </button>
               </motion.li>
