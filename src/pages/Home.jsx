@@ -7,6 +7,7 @@ import TransactionList from '../components/TransactionList';
 import Dashboard from '../components/Dashboard';
 import Reports from '../components/Reports';
 import Budget from '../components/Budget';
+import Profile from '../components/Profile';
 // Import icons from lucide-react
 import { 
   Receipt, 
@@ -28,10 +29,26 @@ const Home = () => {
     return localStorage.getItem('activeView') || 'overview'
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [profilePicture, setProfilePicture] = useState(null);
 
   useEffect(() => {
     localStorage.setItem('activeView', activeView);
   }, [activeView]);
+
+  useEffect(() => {
+    // Get profile picture from localStorage if it exists
+    const userDataString = localStorage.getItem('userData');
+    if (userDataString) {
+      try {
+        const userData = JSON.parse(userDataString);
+        if (userData.picture) {
+          setProfilePicture(userData.picture);
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -144,6 +161,8 @@ const Home = () => {
         return <Reports />;
       case 'budget':
         return <Budget />;
+      case 'profile':
+        return <Profile />;
       default:
         return <Dashboard />;
     }
@@ -184,10 +203,8 @@ const Home = () => {
     { id: 'groups', text: "Groups", icon: <Users size={18} /> }
   ];
 
-  // Left panel bottom menu items with icons
-  const leftPanelBottomItems = [
-    { id: 'profile', text: "Profile", icon: <User size={18} /> }
-  ];
+  // Left panel bottom menu items with icons - removed profile, only keeping necessary items
+  const leftPanelBottomItems = [];
 
   return (
     <div className="min-h-screen bg-black">
@@ -274,8 +291,25 @@ const Home = () => {
             </motion.ul>
           </div>
 
-          {/* Empty div for spacing */}
-          <div className="w-[100px] md:w-[170px]"></div>
+          {/* Profile Section */}
+          <motion.button
+            className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border-2 border-[#83bce3] hover:border-white transition-colors"
+            onClick={() => {
+              setActiveView('profile');
+              localStorage.setItem('activeView', 'profile');
+            }}
+            whileHover={{ scale: 1.05 }}
+          >
+            {profilePicture ? (
+              <img 
+                src={profilePicture} 
+                alt="Profile" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User size={24} className="text-white" />
+            )}
+          </motion.button>
         </div>
       </motion.header>
 
@@ -299,9 +333,9 @@ const Home = () => {
             initial="closed"
             animate="open"
             exit="closed"
-            className="fixed top-[70px] left-0 w-64 bg-[#280832] h-[calc(100vh-70px)] z-50 mobile-menu lg:hidden"
+            className="fixed top-[70px] left-0 w-[170px] bg-[#280832] h-[calc(100vh-70px)] z-50 mobile-menu lg:hidden"
           >
-            <div className="flex flex-col h-full p-6 overflow-y-auto">
+            <div className="flex flex-col h-full p-4 overflow-y-auto">
               {/* Other Menu Items */}
               <div className="space-y-6">
                 <ul className="space-y-4">
@@ -334,29 +368,6 @@ const Home = () => {
               {/* Bottom Menu Items */}
               <div className="mt-auto pt-6">
                 <ul className="space-y-4">
-                  {leftPanelBottomItems.map((item, index) => (
-                    <motion.li
-                      key={index}
-                      variants={listItemVariants}
-                      whileHover="hover"
-                      animate={activeView === item.id ? "hover" : "visible"}
-                      className={`
-                        text-white cursor-pointer transition-all duration-300
-                        px-4 py-2 rounded-lg flex items-center gap-3
-                        ${activeView === item.id 
-                          ? 'text-[#83bce3] bg-[#83bce3]/10 shadow-lg' 
-                          : 'hover:text-[#83bce3]'
-                        }
-                      `}
-                      onClick={() => {
-                        setActiveView(item.id);
-                        setIsMobileMenuOpen(false);
-                      }}
-                    >
-                      {item.icon}
-                      {item.text}
-                    </motion.li>
-                  ))}
                   <motion.li
                     variants={listItemVariants}
                     whileHover="hover"
@@ -384,10 +395,10 @@ const Home = () => {
           variants={leftPanelVariants}
           initial="hidden"
           animate="visible"
-          className="hidden lg:flex w-64 bg-[#280832] min-h-screen fixed left-0 flex-col justify-between p-6 pb-20 overflow-y-auto"
+          className="hidden lg:flex w-[170px] bg-[#280832] min-h-screen fixed left-0 flex-col justify-between p-4 pb-20 overflow-y-auto"
         >
           <div className="space-y-6">
-            <motion.ul className="space-y-4">
+            <motion.ul className="space-y-3">
               {leftPanelMainItems.map((item, index) => (
                 <motion.li
                   key={index}
@@ -396,7 +407,7 @@ const Home = () => {
                   animate={activeView === item.id ? "hover" : "visible"}
                   className={`
                     text-white cursor-pointer transition-all duration-300
-                    px-4 py-2 rounded-lg flex items-center gap-3
+                    px-3 py-2 rounded-lg flex items-center gap-2 text-sm
                     ${activeView === item.id 
                       ? 'text-[#83bce3] bg-[#83bce3]/10 shadow-lg' 
                       : 'hover:text-[#83bce3]'
@@ -414,38 +425,15 @@ const Home = () => {
             </motion.ul>
           </div>
           <div className="mt-auto pt-6">
-            <motion.ul className="space-y-4">
-              {leftPanelBottomItems.map((item, index) => (
-                <motion.li
-                  key={index}
-                  variants={listItemVariants}
-                  whileHover="hover"
-                  animate={activeView === item.id ? "hover" : "visible"}
-                  className={`
-                    text-white cursor-pointer transition-all duration-300
-                    px-4 py-2 rounded-lg flex items-center gap-3
-                    ${activeView === item.id 
-                      ? 'text-[#83bce3] bg-[#83bce3]/10 shadow-lg' 
-                      : 'hover:text-[#83bce3]'
-                    }
-                  `}
-                  onClick={() => {
-                    setActiveView(item.id);
-                    localStorage.setItem('activeView', item.id);
-                  }}
-                >
-                  {item.icon}
-                  {item.text}
-                </motion.li>
-              ))}
+            <motion.ul className="space-y-3">
               <motion.li
                 variants={listItemVariants}
                 whileHover="hover"
-                className="px-4 py-2 rounded-lg"
+                className="px-3 py-2 rounded-lg"
               >
                 <button
                   onClick={handleLogout}
-                  className="text-white transition-colors hover:text-[#83bce3] flex items-center gap-3"
+                  className="text-white transition-colors hover:text-[#83bce3] flex items-center gap-2 text-sm"
                 >
                   <LogOut size={18} />
                   Log out
@@ -460,7 +448,7 @@ const Home = () => {
           variants={contentVariants}
           initial="hidden"
           animate="visible"
-          className="flex-1 p-4 md:p-8 lg:ml-64"
+          className="flex-1 p-4 md:p-8 lg:ml-[170px]"
         >
           {renderMainContent()}
         </motion.div>

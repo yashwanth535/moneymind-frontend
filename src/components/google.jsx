@@ -21,6 +21,11 @@ export const googleSignIn = async (credential) => {
       throw new Error("No token received from server");
     }
 
+    // Store user data in localStorage
+    if (data.user) {
+      localStorage.setItem('userData', JSON.stringify(data.user));
+    }
+
     console.log("Authentication successful");
     return data; // Return full response data
 

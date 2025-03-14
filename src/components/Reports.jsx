@@ -73,13 +73,16 @@ const Reports = () => {
   const renderCharts = (data) => {
     const chartOptions = {
       responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 1.5,
       plugins: {
         legend: {
           position: 'bottom',
           labels: {
             color: '#fff',
-            padding: 20,
-            font: { size: 12 }
+            padding: 10,
+            font: { size: 11 },
+            boxWidth: 15
           }
         },
         tooltip: {
@@ -131,10 +134,7 @@ const Reports = () => {
           plugins: {
             ...chartOptions.plugins,
             title: {
-              display: true,
-              text: 'Expense Distribution by Purpose',
-              color: '#fff',
-              font: { size: 16 }
+              display: false
             }
           }
         }
@@ -166,12 +166,17 @@ const Reports = () => {
         },
         options: {
           ...chartOptions,
+          aspectRatio: 2,
           scales: {
             x: {
               grid: {
                 color: 'rgba(255, 255, 255, 0.1)'
               },
-              ticks: { color: '#fff' }
+              ticks: { 
+                color: '#fff',
+                maxRotation: 45,
+                minRotation: 45
+              }
             },
             y: {
               grid: {
@@ -186,10 +191,7 @@ const Reports = () => {
           plugins: {
             ...chartOptions.plugins,
             title: {
-              display: true,
-              text: 'Daily Expense Trend',
-              color: '#fff',
-              font: { size: 16 }
+              display: false
             }
           }
         }
@@ -219,10 +221,7 @@ const Reports = () => {
           plugins: {
             ...chartOptions.plugins,
             title: {
-              display: true,
-              text: 'Payment Method Distribution',
-              color: '#fff',
-              font: { size: 16 }
+              display: false
             }
           }
         }
@@ -421,32 +420,44 @@ const Reports = () => {
         )}
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Expense Distribution Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="bg-[#280832] p-6 rounded-xl border border-[#20D982]/20"
           >
-            <canvas ref={expenseChartRef} height="300"></canvas>
+            <h3 className="text-white text-lg mb-4">Expense Distribution</h3>
+            <div className="w-full h-[300px] relative">
+              <canvas ref={expenseChartRef}></canvas>
+            </div>
           </motion.div>
 
+          {/* Daily Trend Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className="bg-[#280832] p-6 rounded-xl border border-[#20D982]/20"
           >
-            <canvas ref={trendChartRef} height="300"></canvas>
+            <h3 className="text-white text-lg mb-4">Daily Expense Trend</h3>
+            <div className="w-full h-[300px] relative">
+              <canvas ref={trendChartRef}></canvas>
+            </div>
           </motion.div>
 
+          {/* Payment Method Distribution Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-[#280832] p-6 rounded-xl border border-[#20D982]/20 md:col-span-2"
+            className="bg-[#280832] p-6 rounded-xl border border-[#20D982]/20 lg:col-span-2"
           >
-            <canvas ref={paymentChartRef} height="200"></canvas>
+            <h3 className="text-white text-lg mb-4">Payment Method Distribution</h3>
+            <div className="w-full h-[300px] relative">
+              <canvas ref={paymentChartRef}></canvas>
+            </div>
           </motion.div>
         </div>
       </div>

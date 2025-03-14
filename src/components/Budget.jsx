@@ -6,6 +6,9 @@ const Budget = () => {
   const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedBudget, setSelectedBudget] = useState(null);
   const [newBudget, setNewBudget] = useState({
     category: '',
     amount: '',
@@ -25,7 +28,12 @@ const Budget = () => {
       });
       const data = await response.json();
       if (data.success) {
-        setBudgets(data.budgets);
+        // Ensure amount is a number
+        const budgetsWithNumberAmount = data.budgets.map(budget => ({
+          ...budget,
+          amount: Number(budget.amount)
+        }));
+        setBudgets(budgetsWithNumberAmount);
       }
       setLoading(false);
     } catch (error) {
@@ -45,17 +53,84 @@ const Budget = () => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(newBudget),
+        body: JSON.stringify({
+          ...newBudget,
+          amount: Number(newBudget.amount)
+        }),
       });
       const data = await response.json();
       if (data.success) {
-        setBudgets([...budgets, data.budget]);
+        setBudgets([...budgets, { ...data.budget, amount: Number(data.budget.amount) }]);
         setShowAddModal(false);
         setNewBudget({ category: '', amount: '', period: 'monthly' });
       }
     } catch (error) {
       console.error('Error adding budget:', error);
       setError('Failed to add budget');
+    }
+  };
+
+  const handleEditClick = (budget) => {
+    setSelectedBudget(budget);
+    setNewBudget({
+      category: budget.category,
+      amount: budget.amount.toString(),
+      period: budget.period
+    });
+    setShowEditModal(true);
+  };
+
+  const handleDeleteClick = (budget) => {
+    setSelectedBudget(budget);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleEditBudget = async (e) => {
+    e.preventDefault();
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${API_URL}/budgets/${selectedBudget._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...newBudget,
+          amount: Number(newBudget.amount)
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setBudgets(budgets.map(b => 
+          b._id === selectedBudget._id ? { ...data.budget, amount: Number(data.budget.amount) } : b
+        ));
+        setShowEditModal(false);
+        setSelectedBudget(null);
+        setNewBudget({ category: '', amount: '', period: 'monthly' });
+      }
+    } catch (error) {
+      console.error('Error editing budget:', error);
+      setError('Failed to edit budget');
+    }
+  };
+
+  const handleDeleteBudget = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${API_URL}/budgets/${selectedBudget._id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.success) {
+        setBudgets(budgets.filter(b => b._id !== selectedBudget._id));
+        setShowDeleteConfirm(false);
+        setSelectedBudget(null);
+      }
+    } catch (error) {
+      console.error('Error deleting budget:', error);
+      setError('Failed to delete budget');
     }
   };
 
@@ -105,10 +180,16 @@ const Budget = () => {
                     <p className="text-sm text-gray-400">{budget.period}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button className="p-1.5 hover:bg-white/10 rounded-full transition-colors">
+                    <button 
+                      onClick={() => handleEditClick(budget)}
+                      className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                    >
                       <Edit2 className="w-4 h-4 text-[#83bce3]" />
                     </button>
-                    <button className="p-1.5 hover:bg-white/10 rounded-full transition-colors">
+                    <button 
+                      onClick={() => handleDeleteClick(budget)}
+                      className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                    >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </button>
                   </div>
@@ -219,6 +300,105 @@ const Budget = () => {
                 </button>
               </div>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Edit Budget Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#280832] rounded-xl p-6 w-full max-w-md mx-4"
+          >
+            <h3 className="text-xl font-semibold text-white mb-4">Edit Budget</h3>
+            <form onSubmit={handleEditBudget} className="space-y-4">
+              <div>
+                <label className="block text-gray-400 mb-1">Category</label>
+                <input
+                  type="text"
+                  value={newBudget.category}
+                  onChange={(e) => setNewBudget({ ...newBudget, category: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg bg-black/20 text-white border border-gray-700 focus:border-[#20D982] focus:outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-400 mb-1">Amount</label>
+                <input
+                  type="number"
+                  value={newBudget.amount}
+                  onChange={(e) => setNewBudget({ ...newBudget, amount: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg bg-black/20 text-white border border-gray-700 focus:border-[#20D982] focus:outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-400 mb-1">Period</label>
+                <select
+                  value={newBudget.period}
+                  onChange={(e) => setNewBudget({ ...newBudget, period: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg bg-black/20 text-white border border-gray-700 focus:border-[#20D982] focus:outline-none"
+                >
+                  <option value="monthly">Monthly</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setSelectedBudget(null);
+                    setNewBudget({ category: '', amount: '', period: 'monthly' });
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg border border-gray-700 text-gray-400 hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 rounded-lg bg-[#20D982]/10 text-[#20D982] border border-[#20D982] hover:bg-[#20D982] hover:text-black transition-all duration-300"
+                >
+                  Update Budget
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#280832] rounded-xl p-6 w-full max-w-md mx-4"
+          >
+            <h3 className="text-xl font-semibold text-white mb-4">Delete Budget</h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete the budget for {selectedBudget?.category}? This action cannot be undone.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setSelectedBudget(null);
+                }}
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-700 text-gray-400 hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteBudget}
+                className="flex-1 px-4 py-2 rounded-lg bg-red-500/10 text-red-500 border border-red-500 hover:bg-red-500 hover:text-white transition-all duration-300"
+              >
+                Delete Budget
+              </button>
+            </div>
           </motion.div>
         </div>
       )}
