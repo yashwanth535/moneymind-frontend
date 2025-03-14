@@ -15,7 +15,7 @@ const Profile = () => {
     bankAccounts: [],
     customCategories: []
   });
-  const [newBank, setNewBank] = useState({ name: '', accountNumber: '' });
+  const [newBank, setNewBank] = useState({ name: '' });
   const [newCategory, setNewCategory] = useState('');
   const [showBankForm, setShowBankForm] = useState(false);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
@@ -66,12 +66,12 @@ const Profile = () => {
   };
 
   const handleAddBank = () => {
-    if (newBank.name && newBank.accountNumber) {
+    if (newBank.name) {
       setProfileData({
         ...profileData,
         bankAccounts: [...profileData.bankAccounts, newBank]
       });
-      setNewBank({ name: '', accountNumber: '' });
+      setNewBank({ name: '' });
       setShowBankForm(false);
     }
   };
@@ -187,7 +187,6 @@ const Profile = () => {
                 <div key={index} className="flex justify-between items-center p-3 bg-black/20 rounded-lg">
                   <div>
                     <p className="text-white">{bank.name}</p>
-                    <p className="text-gray-400 text-sm">****{bank.accountNumber.slice(-4)}</p>
                   </div>
                   {isEditing && (
                     <button
@@ -208,16 +207,7 @@ const Profile = () => {
                   <input
                     type="text"
                     value={newBank.name}
-                    onChange={(e) => setNewBank({ ...newBank, name: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg bg-black/20 text-white border border-gray-700 focus:border-[#20D982] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-400 mb-1">Account Number</label>
-                  <input
-                    type="text"
-                    value={newBank.accountNumber}
-                    onChange={(e) => setNewBank({ ...newBank, accountNumber: e.target.value })}
+                    onChange={(e) => setNewBank({ name: e.target.value })}
                     className="w-full px-4 py-2 rounded-lg bg-black/20 text-white border border-gray-700 focus:border-[#20D982] focus:outline-none"
                   />
                 </div>

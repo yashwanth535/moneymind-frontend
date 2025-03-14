@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import Chart from 'chart.js/auto';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { Download, Eye, EyeOff } from 'lucide-react';
 
 const Reports = () => {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -34,17 +35,31 @@ const Reports = () => {
   useEffect(() => {
     fetchReportData();
     return () => {
-      // Cleanup charts
-      if (expenseChartInstance.current) expenseChartInstance.current.destroy();
-      if (trendChartInstance.current) trendChartInstance.current.destroy();
-      if (paymentChartInstance.current) paymentChartInstance.current.destroy();
+      destroyCharts();
     };
   }, [selectedMonth, selectedYear]);
+
+  const destroyCharts = () => {
+    if (expenseChartInstance.current) {
+      expenseChartInstance.current.destroy();
+      expenseChartInstance.current = null;
+    }
+    if (trendChartInstance.current) {
+      trendChartInstance.current.destroy();
+      trendChartInstance.current = null;
+    }
+    if (paymentChartInstance.current) {
+      paymentChartInstance.current.destroy();
+      paymentChartInstance.current = null;
+    }
+  };
 
   const fetchReportData = async () => {
     try {
       setLoading(true);
       setError(null);
+      destroyCharts(); // Destroy existing charts before fetching new data
+      
       const url = `${API_URL}/reports/monthly?month=${selectedMonth}&year=${selectedYear}`;
       
       const response = await fetch(url, {
@@ -61,7 +76,13 @@ const Reports = () => {
 
       const data = await response.json();
       setReportData(data);
-      renderCharts(data);
+      
+      // Wait for state update and DOM to be ready
+      setTimeout(() => {
+        if (data) {
+          createCharts(data);
+        }
+      }, 0);
     } catch (error) {
       console.error('Error fetching report data:', error);
       setError(error.message);
@@ -70,162 +91,142 @@ const Reports = () => {
     }
   };
 
-  const renderCharts = (data) => {
-    const chartOptions = {
-      responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 1.5,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            color: '#fff',
-            padding: 10,
-            font: { size: 11 },
-            boxWidth: 15
-          }
-        },
-        tooltip: {
-          callbacks: {
-            label: (context) => {
-              const value = context.raw;
-              const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = ((value / total) * 100).toFixed(1);
-              return `₹${value.toLocaleString()} (${percentage}%)`;
-            }
-          }
-        }
-      }
-    };
-
-    // Expense Distribution Chart
-    if (expenseChartRef.current) {
-      if (expenseChartInstance.current) {
-        expenseChartInstance.current.destroy();
-      }
-
-      const ctx = expenseChartRef.current.getContext('2d');
-      const sortedData = data.expenseByPurpose.sort((a, b) => b.total - a.total);
-      const top6 = sortedData.slice(0, 6);
-      const others = sortedData.slice(6);
-      const othersTotal = others.reduce((sum, item) => sum + item.total, 0);
-
-      const labels = top6.map(item => item._id || 'Uncategorized');
-      const values = top6.map(item => item.total);
-
-      if (othersTotal > 0) {
-        labels.push('Others');
-        values.push(othersTotal);
-      }
-
-      expenseChartInstance.current = new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels,
-          datasets: [{
-            data: values,
-            backgroundColor: [
-              '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C0C0C0'
-            ].slice(0, labels.length)
-          }]
-        },
-        options: {
-          ...chartOptions,
-          plugins: {
-            ...chartOptions.plugins,
-            title: {
-              display: false
-            }
-          }
-        }
-      });
-    }
-
-    // Daily Trend Chart
-    if (trendChartRef.current) {
-      if (trendChartInstance.current) {
-        trendChartInstance.current.destroy();
-      }
-
-      const ctx = trendChartRef.current.getContext('2d');
-      trendChartInstance.current = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: data.dailyTrend.map(item => {
-            const date = new Date(item._id);
-            return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-          }),
-          datasets: [{
-            label: 'Daily Expenses',
-            data: data.dailyTrend.map(item => item.total),
-            borderColor: '#20D982',
-            backgroundColor: 'rgba(32, 217, 130, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        },
-        options: {
-          ...chartOptions,
-          aspectRatio: 2,
-          scales: {
-            x: {
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
+  const createCharts = (data) => {
+    if (!data) return;
+    
+    try {
+      // Create Expense Distribution Chart
+      if (expenseChartRef.current && data.expenseByPurpose && data.expenseByPurpose.length > 0) {
+        const ctx = expenseChartRef.current.getContext('2d');
+        expenseChartInstance.current = new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: data.expenseByPurpose.map(item => item._id || 'Uncategorized'),
+            datasets: [{
+              data: data.expenseByPurpose.map(item => item.total),
+              backgroundColor: [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#fff' }
               },
-              ticks: { 
-                color: '#fff',
-                maxRotation: 45,
-                minRotation: 45
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const value = context.raw;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return `₹${value.toLocaleString()} (${percentage}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Create Daily Trend Chart
+      if (trendChartRef.current && data.dailyTrend && data.dailyTrend.length > 0) {
+        const ctx = trendChartRef.current.getContext('2d');
+        trendChartInstance.current = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: data.dailyTrend.map(item => {
+              const date = new Date(item._id);
+              return date.toLocaleDateString('en-US', { 
+                day: 'numeric', 
+                month: 'short' 
+              });
+            }),
+            datasets: [{
+              label: 'Daily Expenses',
+              data: data.dailyTrend.map(item => item.total),
+              borderColor: '#20D982',
+              backgroundColor: 'rgba(32, 217, 130, 0.1)',
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#fff' }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (context) => `₹${context.raw.toLocaleString()}`
+                }
               }
             },
-            y: {
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
+            scales: {
+              x: {
+                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                ticks: { 
+                  color: '#fff',
+                  maxRotation: 45
+                }
               },
-              ticks: { 
-                color: '#fff',
-                callback: value => '₹' + value.toLocaleString()
+              y: {
+                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                ticks: { 
+                  color: '#fff',
+                  callback: value => `₹${value.toLocaleString()}`
+                }
               }
             }
-          },
-          plugins: {
-            ...chartOptions.plugins,
-            title: {
-              display: false
-            }
           }
-        }
-      });
-    }
-
-    // Payment Method Distribution Chart
-    if (paymentChartRef.current) {
-      if (paymentChartInstance.current) {
-        paymentChartInstance.current.destroy();
+        });
       }
 
-      const ctx = paymentChartRef.current.getContext('2d');
-      paymentChartInstance.current = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: data.paymentMethodDistribution.map(item => item._id),
-          datasets: [{
-            data: data.paymentMethodDistribution.map(item => item.total),
-            backgroundColor: [
-              '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
-            ]
-          }]
-        },
-        options: {
-          ...chartOptions,
-          plugins: {
-            ...chartOptions.plugins,
-            title: {
-              display: false
+      // Create Payment Method Chart
+      if (paymentChartRef.current && data.paymentMethodDistribution && data.paymentMethodDistribution.length > 0) {
+        const ctx = paymentChartRef.current.getContext('2d');
+        paymentChartInstance.current = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: data.paymentMethodDistribution.map(item => item._id || 'Other'),
+            datasets: [{
+              data: data.paymentMethodDistribution.map(item => item.total),
+              backgroundColor: [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#fff' }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const value = context.raw;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return `₹${value.toLocaleString()} (${percentage}%)`;
+                  }
+                }
+              }
             }
           }
-        }
-      });
+        });
+      }
+    } catch (error) {
+      console.error('Error creating charts:', error);
+      setError('Failed to create charts');
     }
   };
 
@@ -291,18 +292,56 @@ const Reports = () => {
   const downloadReport = async () => {
     try {
       setLoading(true);
+      
+      // Force desktop view for download
       const reportElement = document.getElementById('report-content');
+      const originalStyle = reportElement.style.cssText;
+      
+      // Temporarily apply desktop styles
+      reportElement.style.cssText = `
+        width: 1024px !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        padding: 2rem !important;
+      `;
+
       const canvas = await html2canvas(reportElement, {
         scale: 2,
-        backgroundColor: '#1a1a2e'
+        backgroundColor: '#1a1a2e',
+        windowWidth: 1024,
+        width: 1024,
+        height: reportElement.scrollHeight,
       });
+      
+      // Restore original styles
+      reportElement.style.cssText = originalStyle;
       
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      // If content is longer than one page, create multiple pages
+      const maxHeight = pdf.internal.pageSize.getHeight();
+      let currentHeight = 0;
+      
+      while (currentHeight < pdfHeight) {
+        if (currentHeight > 0) {
+          pdf.addPage();
+        }
+        
+        const remainingHeight = Math.min(maxHeight, pdfHeight - currentHeight);
+        pdf.addImage(
+          imgData,
+          'PNG',
+          0,
+          currentHeight === 0 ? 0 : -currentHeight,
+          pdfWidth,
+          pdfHeight
+        );
+        
+        currentHeight += maxHeight;
+      }
+      
       pdf.save(`financial-report-${months[selectedMonth - 1]}-${selectedYear}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -314,8 +353,8 @@ const Reports = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-white">Loading report data...</div>
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#20D982] mx-auto"></div>
       </div>
     );
   }
@@ -329,14 +368,14 @@ const Reports = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl text-white font-bold">Financial Report</h1>
-        <div className="flex gap-4">
+    <div className="p-4 md:p-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 mb-6">
+        <h1 className="text-2xl md:text-3xl text-white font-bold">Financial Report</h1>
+        <div className="flex flex-wrap gap-2 md:gap-4 w-full md:w-auto">
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-            className="bg-[#280832] text-white px-4 py-2 rounded-lg border border-[#20D982]/20"
+            className="flex-1 md:flex-none bg-[#280832] text-white text-sm md:text-base px-3 py-2 md:px-4 md:py-2 rounded-lg border border-[#20D982]/20"
           >
             {months.map((month, index) => (
               <option key={index} value={index + 1}>{month}</option>
@@ -345,7 +384,7 @@ const Reports = () => {
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            className="bg-[#280832] text-white px-4 py-2 rounded-lg border border-[#20D982]/20"
+            className="flex-1 md:flex-none bg-[#280832] text-white text-sm md:text-base px-3 py-2 md:px-4 md:py-2 rounded-lg border border-[#20D982]/20"
           >
             {years.map(year => (
               <option key={year} value={year}>{year}</option>
@@ -353,43 +392,45 @@ const Reports = () => {
           </select>
           <button
             onClick={() => setShowInsights(!showInsights)}
-            className="bg-[#280832] text-white px-6 py-2 rounded-lg border border-[#20D982]/20 hover:bg-[#20D982]/10 transition-colors"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#280832] text-white px-3 py-2 md:px-6 md:py-2 rounded-lg border border-[#20D982]/20 hover:bg-[#20D982]/10 transition-colors"
           >
-            {showInsights ? 'Hide Insights' : 'Show Insights'}
+            {showInsights ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            <span className="hidden md:inline">{showInsights ? 'Hide Insights' : 'Show Insights'}</span>
           </button>
           <button
             onClick={downloadReport}
-            className="bg-[#20D982] text-white px-6 py-2 rounded-lg hover:bg-[#1aaf6a] transition-colors"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#20D982] text-white px-3 py-2 md:px-6 md:py-2 rounded-lg hover:bg-[#1aaf6a] transition-colors"
           >
-            Download Report
+            <Download className="w-5 h-5" />
+            <span className="hidden md:inline">Download Report</span>
           </button>
         </div>
       </div>
 
-      <div id="report-content" className="space-y-6">
+      <div id="report-content" className="space-y-4 md:space-y-6">
         {/* Summary Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[#280832] p-6 rounded-xl border border-[#20D982]/20"
+          className="bg-[#280832] p-4 md:p-6 rounded-xl border border-[#20D982]/20"
         >
-          <h2 className="text-xl text-white mb-4">Monthly Summary</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-[#1a1a2e] p-4 rounded-lg">
-              <div className="text-gray-400">Total Income</div>
-              <div className="text-2xl text-green-400">
+          <h2 className="text-lg md:text-xl text-white mb-4">Monthly Summary</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            <div className="bg-[#1a1a2e] p-3 md:p-4 rounded-lg">
+              <div className="text-gray-400 text-sm md:text-base">Total Income</div>
+              <div className="text-xl md:text-2xl text-green-400">
                 ₹{reportData?.totals.credit.toLocaleString()}
               </div>
             </div>
-            <div className="bg-[#1a1a2e] p-4 rounded-lg">
-              <div className="text-gray-400">Total Expenses</div>
-              <div className="text-2xl text-red-400">
+            <div className="bg-[#1a1a2e] p-3 md:p-4 rounded-lg">
+              <div className="text-gray-400 text-sm md:text-base">Total Expenses</div>
+              <div className="text-xl md:text-2xl text-red-400">
                 ₹{reportData?.totals.debit.toLocaleString()}
               </div>
             </div>
-            <div className="bg-[#1a1a2e] p-4 rounded-lg">
-              <div className="text-gray-400">Net Savings</div>
-              <div className={`text-2xl ${reportData?.savings >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <div className="bg-[#1a1a2e] p-3 md:p-4 rounded-lg">
+              <div className="text-gray-400 text-sm md:text-base">Net Savings</div>
+              <div className={`text-xl md:text-2xl ${reportData?.savings >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 ₹{reportData?.savings.toLocaleString()}
               </div>
             </div>
@@ -401,16 +442,16 @@ const Reports = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#280832] p-6 rounded-xl border border-[#20D982]/20"
+            className="bg-[#280832] p-4 md:p-6 rounded-xl border border-[#20D982]/20"
           >
-            <h2 className="text-xl text-white mb-4">Financial Insights</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <h2 className="text-lg md:text-xl text-white mb-4">Financial Insights</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {generateInsights(reportData).map((insight, index) => (
-                <div key={index} className="bg-[#1a1a2e] p-4 rounded-lg">
-                  <h3 className="text-[#20D982] font-semibold mb-2">{insight.title}</h3>
-                  <ul className="space-y-2">
+                <div key={index} className="bg-[#1a1a2e] p-3 md:p-4 rounded-lg">
+                  <h3 className="text-[#20D982] text-sm md:text-base font-semibold mb-2">{insight.title}</h3>
+                  <ul className="space-y-1.5 md:space-y-2">
                     {insight.points.map((point, i) => (
-                      <li key={i} className="text-gray-300 text-sm">{point}</li>
+                      <li key={i} className="text-gray-300 text-xs md:text-sm">{point}</li>
                     ))}
                   </ul>
                 </div>
@@ -420,16 +461,16 @@ const Reports = () => {
         )}
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Expense Distribution Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-[#280832] p-6 rounded-xl border border-[#20D982]/20"
+            className="bg-[#280832] p-4 md:p-6 rounded-xl border border-[#20D982]/20"
           >
-            <h3 className="text-white text-lg mb-4">Expense Distribution</h3>
-            <div className="w-full h-[300px] relative">
+            <h3 className="text-white text-base md:text-lg mb-4">Expense Distribution</h3>
+            <div className="h-[300px] relative">
               <canvas ref={expenseChartRef}></canvas>
             </div>
           </motion.div>
@@ -439,10 +480,10 @@ const Reports = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-[#280832] p-6 rounded-xl border border-[#20D982]/20"
+            className="bg-[#280832] p-4 md:p-6 rounded-xl border border-[#20D982]/20"
           >
-            <h3 className="text-white text-lg mb-4">Daily Expense Trend</h3>
-            <div className="w-full h-[300px] relative">
+            <h3 className="text-white text-base md:text-lg mb-4">Daily Expense Trend</h3>
+            <div className="h-[300px] relative">
               <canvas ref={trendChartRef}></canvas>
             </div>
           </motion.div>
@@ -452,10 +493,10 @@ const Reports = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-[#280832] p-6 rounded-xl border border-[#20D982]/20 lg:col-span-2"
+            className="bg-[#280832] p-4 md:p-6 rounded-xl border border-[#20D982]/20 lg:col-span-2"
           >
-            <h3 className="text-white text-lg mb-4">Payment Method Distribution</h3>
-            <div className="w-full h-[300px] relative">
+            <h3 className="text-white text-base md:text-lg mb-4">Payment Method Distribution</h3>
+            <div className="h-[300px] relative">
               <canvas ref={paymentChartRef}></canvas>
             </div>
           </motion.div>

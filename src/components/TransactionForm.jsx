@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Plus } from 'lucide-react';
 
 const TransactionForm = () => {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -13,6 +14,25 @@ const TransactionForm = () => {
   });
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch(`${API_URL}/profile`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setProfile(data.profile);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
 
   const formVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -143,7 +163,7 @@ const TransactionForm = () => {
         <motion.select
           variants={inputVariants}
           whileHover={{ scale: 1.02 }}
-          className="w-[25%] md:w-[15%] mx-auto p-2 md:p-2.5 text-sm md:text-base rounded-lg border border-[#20D982]/30 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
+          className="w-[40%] md:w-[30%] mx-auto p-2 md:p-2.5 text-sm md:text-base rounded-lg border border-[#20D982]/30 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
           value={formType}
           onChange={(e) => setFormType(e.target.value)}
         >
@@ -190,16 +210,30 @@ const TransactionForm = () => {
               exit="hidden"
               className="space-y-1"
             >
-              <label className="text-gray-200 text-sm md:text-base">Purpose</label>
-              <motion.input
+              <div className="flex justify-between items-center">
+                <label className="text-gray-200 text-sm md:text-base">Purpose</label>
+                <motion.a
+                  href="/home#profile"
+                  whileHover={{ scale: 1.05 }}
+                  className="flex items-center text-[#20D982] text-sm hover:text-[#1aaf6a]"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Categories
+                </motion.a>
+              </div>
+              <motion.select
                 whileFocus={{ scale: 1.01 }}
-                type="text"
                 name="purpose"
                 value={formData.purpose}
                 onChange={handleInputChange}
                 className="w-full p-2 text-sm md:text-base rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
-                required={formType === 'debit'}
-              />
+                required
+              >
+                <option value="">Select Category</option>
+                {profile?.customCategories?.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </motion.select>
             </motion.div>
           )}
 
@@ -228,16 +262,32 @@ const TransactionForm = () => {
               exit="hidden"
               className="space-y-1"
             >
-              <label className="text-gray-200 text-sm md:text-base">Bank</label>
-              <motion.input
+              <div className="flex justify-between items-center">
+                <label className="text-gray-200 text-sm md:text-base">Bank</label>
+                <motion.a
+                  href="/home#profile"
+                  whileHover={{ scale: 1.05 }}
+                  className="flex items-center text-[#20D982] text-sm hover:text-[#1aaf6a]"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Banks
+                </motion.a>
+              </div>
+              <motion.select
                 whileFocus={{ scale: 1.01 }}
-                type="text"
                 name="bank"
                 value={formData.bank}
                 onChange={handleInputChange}
                 className="w-full p-2 text-sm md:text-base rounded-lg border border-gray-600 bg-[#280832] text-white focus:ring-2 focus:ring-[#83bce3]"
-                required={formType === 'credit'}
-              />
+                required
+              >
+                <option value="">Select Bank</option>
+                {profile?.bankAccounts?.map((bank) => (
+                  <option key={bank.name} value={bank.name}>
+                    {bank.name}
+                  </option>
+                ))}
+              </motion.select>
             </motion.div>
           )}
 
@@ -252,7 +302,11 @@ const TransactionForm = () => {
                 : 'hover:bg-[#66a8c4] active:bg-[#3b7b98]'
               }`}
           >
-            {isSubmitting ? 'Submitting...' : 'Submit'}
+            {isSubmitting ? (
+              <div className="flex justify-center items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-black"></div>
+              </div>
+            ) : 'Submit'}
           </motion.button>
         </motion.form>
       </motion.div>
