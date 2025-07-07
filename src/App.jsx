@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import LandingPage from "./pages/Landing";
 import Home from "./pages/Home";
 import NotFound from "./pages/error/PageNotFound";
+import BackendStatusCheck from "./pages/error/BackendStatusCheck";
 
 function App() {
   return (
@@ -13,7 +14,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/error" element={<Error/>} />
         <Route path="*" element={<NotFound  />} />
-
+        <Route path="/db" element={<BackendStatusCheck />} />
         <Route element={<ProtectedRoute role="user"/>}>
           <Route path="/home" element={<Home />} />
         </Route>
