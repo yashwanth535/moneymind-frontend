@@ -14,7 +14,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/error" element={<Error/>} />
         <Route path="*" element={<NotFound  />} />
-        <Route path="/db" element={<BackendStatusCheck />} />
+        <Route path="/backend" element={<BackendStatusCheck />} />
         <Route element={<ProtectedRoute role="user"/>}>
           <Route path="/home" element={<Home />} />
         </Route>
