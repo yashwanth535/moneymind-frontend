@@ -317,6 +317,23 @@ const LandingPage = () => {
       <footer className="bg-[#1d0324] text-white py-4 md:py-5 text-center">
         <hr className="border-white/20 max-w-6xl mx-auto mb-3 md:mb-4" />
         <p className="text-sm md:text-base">&copy; 2024 MoneyMind. All rights reserved.</p>
+        <p className="text-sm md:text-base mt-2 text-center">
+          Created by{" "}
+          <a 
+            href="https://yashwanth.site/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[#20D982] hover:text-[#bbe86f] transition-colors duration-300 underline"
+          >
+            Yashwanth Munikuntla
+          </a>
+          {" "} — also known as{" "}
+          <span className="text-gray-400">
+            Yashwanth Goud, yashwanth535
+          </span>
+          , passionate full-stack developer & creator of MoneyMind.
+        </p>
+
       </footer>
     </div>
   );
