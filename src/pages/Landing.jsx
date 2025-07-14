@@ -333,6 +333,21 @@ const LandingPage = () => {
           </span>
           , passionate full-stack developer & creator of MoneyMind.
         </p>
+        <div className="mt-2 flex flex-col md:flex-row gap-1 md:gap-4 justify-center items-center text-xs md:text-sm">
+          <a
+            href="/policy"
+            className="text-[#20D982] hover:text-[#bbe86f] underline transition-colors duration-300"
+          >
+            Privacy Policy
+          </a>
+          <span className="hidden md:inline-block text-gray-500">|</span>
+          <a
+            href="/terms"
+            className="text-[#20D982] hover:text-[#bbe86f] underline transition-colors duration-300"
+          >
+            Terms of Service
+          </a>
+        </div>
 
       </footer>
     </div>

@@ -8,4 +8,20 @@
     <priority>1.0</priority>
     <mobile:mobile/>
   </url>
+
+  <url>
+    <loc>https://moneymind.yashwanth.site/policy/</loc>
+    <lastmod>2025-07-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <mobile:mobile/>
+  </url>
+
+  <url>
+    <loc>https://moneymind.yashwanth.site/terms/</loc>
+    <lastmod>2025-07-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <mobile:mobile/>
+  </url>
 </urlset>
