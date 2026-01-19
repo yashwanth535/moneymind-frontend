@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://moneymind.yashwanth.site/sitemap.xml
+Sitemap: https://moneymind.yashwanth.online/sitemap.xml
