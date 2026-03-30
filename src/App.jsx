@@ -7,6 +7,7 @@ import NotFound from "./pages/error/PageNotFound";
 import BackendStatusCheck from "./pages/error/BackendStatusCheck";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
+import Yt from "./pages/Yt";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/backend" element={<BackendStatusCheck />} />
         <Route path="/policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/yt" element={<Yt />} />
         <Route element={<ProtectedRoute role="user"/>}>
           <Route path="/home" element={<Home />} />
         </Route>
