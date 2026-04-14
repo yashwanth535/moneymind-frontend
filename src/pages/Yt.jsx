@@ -8,6 +8,7 @@ import {
   FaPlay,
   FaTrash,
   FaTv,
+  FaYoutube,
 } from "react-icons/fa";
 
 function extractYouTubeId(input) {
@@ -42,9 +43,114 @@ function extractYouTubeId(input) {
   return null;
 }
 
+const SECTION_LABELS = {
+  "watch-now": "Watch Now",
+  "watch-later": "Watch Later",
+  youtube: "YouTube Playlist",
+};
+
+// ─── Video Card ───────────────────────────────────────────────────────────────
+const VideoCard = ({ item, onView, onCopy, onMove, onDelete }) => {
+  const isYoutube = item.isYoutube === true;
+  const otherSection = item.section === "watch-now" ? "watch-later" : "watch-now";
+
+  return (
+    <div className="rounded-xl border border-orange-100 bg-white p-3 shadow-sm">
+      <div className="flex gap-3">
+        {item.thumbnailUrl ? (
+          <img
+            src={item.thumbnailUrl}
+            alt={item.title}
+            className="w-24 h-16 object-cover rounded-md border shrink-0"
+          />
+        ) : (
+          <div className="w-24 h-16 rounded-md border bg-orange-50 flex items-center justify-center shrink-0">
+            <FaYoutube className="text-orange-400 text-2xl" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="font-semibold text-sm text-gray-800 line-clamp-2">
+            {item.title || "YouTube Video"}
+          </p>
+          <p className="text-xs text-gray-500 truncate mt-1">{item.url}</p>
+          {isYoutube && (
+            <span className="inline-block mt-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-100 text-red-600">
+              Playlist
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => onView(item.url)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+        >
+          <FaTv />
+          View
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onCopy(item.url)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+        >
+          <FaClipboard />
+          Copy
+        </button>
+
+        {/* Move is only available for DB items (not YouTube playlist items) */}
+        {!isYoutube && (
+          <button
+            type="button"
+            onClick={() => onMove(item._id, otherSection)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+          >
+            → {SECTION_LABELS[otherSection]}
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => onDelete(item._id)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+        >
+          <FaTrash />
+          Remove
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── Section Panel ────────────────────────────────────────────────────────────
+const SectionPanel = ({ title, items, loading, onView, onCopy, onMove, onDelete }) => (
+  <div className="rounded-2xl bg-white/60 border border-orange-100 shadow-lg p-4">
+    <h3 className="text-base font-bold text-gray-800 mb-3">{title}</h3>
+    <div className="space-y-3">
+      {items.map((item) => (
+        <VideoCard
+          key={item._id}
+          item={item}
+          onView={onView}
+          onCopy={onCopy}
+          onMove={onMove}
+          onDelete={onDelete}
+        />
+      ))}
+      {!loading && items.length === 0 && (
+        <p className="text-sm text-gray-400 italic">Nothing here yet.</p>
+      )}
+    </div>
+  </div>
+);
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 const Yt = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
   const [playInput, setPlayInput] = useState("");
   const [saveInput, setSaveInput] = useState("");
   const [customTitle, setCustomTitle] = useState("");
@@ -57,6 +163,7 @@ const Yt = () => {
 
   const apiBase = import.meta.env.VITE_API_URL || "";
 
+  // ── Load all links ──────────────────────────────────────────────────────────
   const loadSavedLinks = useCallback(async () => {
     try {
       setLoading(true);
@@ -71,6 +178,7 @@ const Yt = () => {
     }
   }, [apiBase]);
 
+  // ── URL / video ID helpers ──────────────────────────────────────────────────
   const applyUrl = useCallback(
     (raw) => {
       const id = extractYouTubeId(raw);
@@ -98,11 +206,20 @@ const Yt = () => {
       setError("");
       return;
     }
-    if (urlParam) {
-      applyUrl(decodeURIComponent(urlParam));
-    }
+    if (urlParam) applyUrl(decodeURIComponent(urlParam));
   }, [searchParams, applyUrl]);
 
+  // ── Sections (now includes "youtube" from backend) ──────────────────────────
+  const sections = useMemo(
+    () => ({
+      youtube: savedLinks.filter((item) => item.section === "youtube"),
+      "watch-now": savedLinks.filter((item) => item.section === "watch-now"),
+      "watch-later": savedLinks.filter((item) => item.section === "watch-later"),
+    }),
+    [savedLinks]
+  );
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!playInput.trim()) {
@@ -111,18 +228,6 @@ const Yt = () => {
     }
     applyUrl(playInput);
   };
-
-  const embedSrc = videoId
-    ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0`
-    : null;
-
-  const sections = useMemo(
-    () => ({
-      "watch-now": savedLinks.filter((item) => item.section === "watch-now"),
-      "watch-later": savedLinks.filter((item) => item.section === "watch-later"),
-    }),
-    [savedLinks]
-  );
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -165,13 +270,13 @@ const Yt = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Failed to remove URL.");
       setSavedLinks((prev) => prev.filter((item) => item._id !== id));
-      setServerMessage("URL removed.");
+      setServerMessage("Removed successfully.");
     } catch (apiError) {
       setServerMessage(apiError.message);
     }
   };
 
-  const moveSection = async (id, nextSection) => {
+  const handleMove = async (id, nextSection) => {
     setServerMessage("");
     try {
       const res = await fetch(`${apiBase}/yt/${id}/section`, {
@@ -186,13 +291,13 @@ const Yt = () => {
           item._id === id ? { ...item, section: data.link.section } : item
         )
       );
-      setServerMessage(`Moved to ${nextSection.replace("-", " ")}.`);
+      setServerMessage(`Moved to ${SECTION_LABELS[nextSection]}.`);
     } catch (apiError) {
       setServerMessage(apiError.message);
     }
   };
 
-  const copyToClipboard = async (url) => {
+  const handleCopy = async (url) => {
     try {
       await navigator.clipboard.writeText(url);
       setServerMessage("Link copied.");
@@ -201,14 +306,17 @@ const Yt = () => {
     }
   };
 
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
+  const embedSrc = videoId
+    ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0`
+    : null;
+
+  const fadeInUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-orange-100 to-orange-50 relative overflow-hidden">
       <div className="relative z-10 flex flex-col flex-1">
+
+        {/* Header */}
         <header className="bg-white/10 backdrop-blur-md text-gray-800 border-b border-white/20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
             <motion.div
@@ -220,19 +328,15 @@ const Yt = () => {
                 type="button"
                 onClick={() => navigate(-1)}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/40 hover:bg-white/60 text-gray-800 text-sm font-medium transition-colors"
-                aria-label="Go back"
               >
-                <FaArrowLeft />
-                Back
+                <FaArrowLeft /> Back
               </button>
               <button
                 type="button"
                 onClick={() => navigate("/")}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/40 hover:bg-white/60 text-gray-800 text-sm font-medium transition-colors"
-                aria-label="Home"
               >
-                <FaHome />
-                Home
+                <FaHome /> Home
               </button>
             </motion.div>
             <motion.h1
@@ -246,6 +350,8 @@ const Yt = () => {
         </header>
 
         <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8">
+
+          {/* Play form */}
           <motion.form
             onSubmit={handleSubmit}
             className="mb-8"
@@ -271,17 +377,15 @@ const Yt = () => {
                 type="submit"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold shadow-md hover:from-orange-600 hover:to-orange-700 transition-all shrink-0"
               >
-                <FaPlay className="text-sm" />
-                Load video
+                <FaPlay className="text-sm" /> Load video
               </button>
             </div>
             {error && (
-              <p className="mt-2 text-sm text-red-600" role="alert">
-                {error}
-              </p>
+              <p className="mt-2 text-sm text-red-600" role="alert">{error}</p>
             )}
           </motion.form>
 
+          {/* Embed player */}
           {embedSrc && (
             <motion.div
               className="rounded-2xl overflow-hidden shadow-xl border border-white/40 bg-black/5 aspect-video w-full"
@@ -300,6 +404,7 @@ const Yt = () => {
             </motion.div>
           )}
 
+          {/* Save form */}
           <motion.section
             className="mt-10 rounded-2xl bg-white/60 border border-orange-100 shadow-lg p-4 sm:p-6"
             variants={fadeInUp}
@@ -329,97 +434,75 @@ const Yt = () => {
                   onChange={(e) => setSaveSection(e.target.value)}
                   className="px-4 py-3 rounded-xl border border-orange-200 bg-white/80 focus:outline-none focus:ring-2 focus:ring-orange-400"
                 >
-                  <option value="watch-now">Watch now</option>
-                  <option value="watch-later">Watch later</option>
+                  <option value="watch-now">Watch Now</option>
+                  <option value="watch-later">Watch Later</option>
                 </select>
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-fit inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold disabled:opacity-60"
+                className="w-fit inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold disabled:opacity-60 transition-colors"
               >
                 <FaPlay className="text-xs" />
                 {loading ? "Saving..." : "Save URL"}
               </button>
             </form>
-            {serverMessage && <p className="mt-2 text-sm text-gray-700">{serverMessage}</p>}
+            {serverMessage && (
+              <p className="mt-2 text-sm text-gray-700">{serverMessage}</p>
+            )}
           </motion.section>
 
-          <section className="mt-8 grid md:grid-cols-2 gap-6">
-            {["watch-now", "watch-later"].map((sectionKey) => (
-              <div
-                key={sectionKey}
-                className="rounded-2xl bg-white/60 border border-orange-100 shadow-lg p-4"
+          {/* ── Three section panels ── */}
+          <div className="mt-8 space-y-6">
+
+            {/* YouTube Playlist — full width, read-only move */}
+            {sections.youtube.length > 0 && (
+              <motion.div
+                variants={fadeInUp}
+                initial="hidden"
+                animate="visible"
+                transition={{ duration: 0.35, delay: 0.15 }}
               >
-                <h3 className="text-base font-bold text-gray-800 mb-3 capitalize">
-                  {sectionKey.replace("-", " ")}
-                </h3>
-                <div className="space-y-3">
-                  {sections[sectionKey].map((item) => (
-                    <div
-                      key={item._id}
-                      className="rounded-xl border border-orange-100 bg-white p-3 shadow-sm"
-                    >
-                      <div className="flex gap-3">
-                        <img
-                          src={item.thumbnailUrl}
-                          alt={item.title}
-                          className="w-24 h-16 object-cover rounded-md border"
-                        />
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm text-gray-800 line-clamp-2">
-                            {item.title || "YouTube Video"}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate mt-1">{item.url}</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => applyUrl(item.url)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-orange-500 text-white hover:bg-orange-600"
-                        >
-                          <FaTv />
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(item.url)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300"
-                        >
-                          <FaClipboard />
-                          Copy
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            moveSection(
-                              item._id,
-                              item.section === "watch-now" ? "watch-later" : "watch-now"
-                            )
-                          }
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
-                        >
-                          Move
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(item._id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200"
-                        >
-                          <FaTrash />
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  {!loading && sections[sectionKey].length === 0 && (
-                    <p className="text-sm text-gray-500">No URLs in this section yet.</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </section>
+                <SectionPanel
+                  title={
+                    <span className="flex items-center gap-2">
+                      <FaYoutube className="text-red-500" />
+                      {SECTION_LABELS.youtube}
+                    </span>
+                  }
+                  items={sections.youtube}
+                  loading={loading}
+                  onView={applyUrl}
+                  onCopy={handleCopy}
+                  onMove={handleMove}   // VideoCard won't render Move for isYoutube items
+                  onDelete={handleDelete}
+                />
+              </motion.div>
+            )}
+
+            {/* Watch Now + Watch Later side-by-side */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {["watch-now", "watch-later"].map((key, i) => (
+                <motion.div
+                  key={key}
+                  variants={fadeInUp}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ duration: 0.35, delay: 0.2 + i * 0.05 }}
+                >
+                  <SectionPanel
+                    title={SECTION_LABELS[key]}
+                    items={sections[key]}
+                    loading={loading}
+                    onView={applyUrl}
+                    onCopy={handleCopy}
+                    onMove={handleMove}
+                    onDelete={handleDelete}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </div>
 
           {!embedSrc && !error && (
             <p className="text-center text-gray-500 text-sm mt-8">
